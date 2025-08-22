@@ -1,0 +1,67 @@
+options:
+    prefix: &fNova&0Dev &8»&7
+
+command /mute <player> [<number>] [<text>]:
+    permission: novadev.mute
+    usage: /mute <oyuncu> [süre] [sebep]
+    trigger:
+        if arg-1 is not set:
+            send "{@prefix} &cBir oyuncu belirtmelisin!"
+            stop
+        if {muted.%uuid of arg-1%} is set:
+            send "{@prefix} &e%arg-1% &czaten susturulmuş!"
+            stop
+        if arg-2 is set:
+            set {_time} to arg-2 parsed as number
+        else:
+            set {_time} to -1
+        if arg-3 is set:
+            set {_reason} to arg-3
+        else:
+            set {_reason} to "Belirtilmedi"
+        set {muted.%uuid of arg-1%} to now
+        set {mutereason.%uuid of arg-1%} to {_reason}
+        set {mutetime.%uuid of arg-1%} to {_time}
+        if {_time} is -1:
+            send "{@prefix} &e%arg-1% &7kalıcı olarak susturuldu! &8(&fSebep: &c%{mutereason.%uuid of arg-1%}%&8)" to all players
+            send "{@prefix} &cSusturuldun! &7(Sınırsız)" to arg-1
+        else:
+            send "{@prefix} &e%arg-1% &7%{mutetime.%uuid of arg-1%}% dakika susturuldu! &8(&fSebep: &c%{mutereason.%uuid of arg-1%}%&8)" to all players
+            send "{@prefix} &c%{mutetime.%uuid of arg-1%}% dakika susturuldun! &8(&fSebep: &c%{mutereason.%uuid of arg-1%}%&8)" to arg-1
+
+command /unmute <player>:
+    permission: novadev.unmute
+    usage: /unmute <oyuncu>
+    trigger:
+        if arg-1 is not set:
+            send "{@prefix} &cBir oyuncu belirtmelisin!"
+            stop
+        if {muted.%uuid of arg-1%} is not set:
+            send "{@prefix} &e%arg-1% &csusturulmamış!"
+            stop
+        delete {muted.%uuid of arg-1%}
+        delete {mutereason.%uuid of arg-1%}
+        delete {mutetime.%uuid of arg-1%}
+        send "{@prefix} &e%arg-1% &asadce susturması kaldırıldı!" to all players
+        send "{@prefix} &aSusturulman kaldırıldı!" to arg-1
+
+on chat:
+    if {muted.%uuid of player%} is set:
+        set {_time} to {mutetime.%uuid of player%}
+        set {_reason} to {mutereason.%uuid of player%}
+        set {_muteDate} to {muted.%uuid of player%}
+        if {_time} is not -1:
+            set {_left} to difference between {_muteDate} and now
+            set {_minutes} to {_left} parsed as minutes
+            set {_remain} to {_time} - {_minutes}
+            if {_remain} <= 0:
+                delete {muted.%uuid of player%}
+                delete {mutereason.%uuid of player%}
+                delete {mutetime.%uuid of player%}
+                send "{@prefix} &aSusturma süren bitti!" to player
+                stop
+            cancel event
+            send "{@prefix} &cSusturuldun! &7Kalan süre: &f%{_remain}% dk &8(&fSebep: &c%{_reason}%&8)" to player
+        else:
+            cancel event
+            send "{@prefix} &cKalıcı olarak susturuldun! &8(&fSebep: &c%{_reason}%&8)" to player
